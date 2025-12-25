@@ -1,9 +1,8 @@
 import { CartRepository } from '../repository/cartRepository';
 import { ProductRepository } from '../repository/productRepository';
-import { ICart, ICartItem } from '../models/Cart';
-import Product from '../models/Product';
-import { IProduct } from '../models/Product';
+import { Prisma, CartItem as PrismaCartItem, User as PrismaUser } from '@prisma/client';
 
+// Define types for cart operations
 interface AddToCartData {
   userId: string;
   productId: string;
@@ -15,11 +14,11 @@ interface AddToCartData {
 const cartRepository = new CartRepository();
 const productRepository = new ProductRepository();
 
-export const getCartByUserId = async (userId: string): Promise<any | null> => {
+export const getCartByUserId = async (userId: string): Promise<PrismaCartItem[] | null> => {
   return await cartRepository.getUserCart(userId);
 };
 
-export const addToCart = async (cartData: AddToCartData): Promise<any> => {
+export const addToCart = async (cartData: AddToCartData): Promise<PrismaCartItem> => {
   const { userId, productId, quantity, selectedColor, selectedSize } = cartData;
 
   // Validate product exists
@@ -50,7 +49,7 @@ export const updateCartItem = async (
   quantity: number,
   selectedColor?: string,
   selectedSize?: string
-): Promise<any | null> => {
+): Promise<PrismaCartItem | null> => {
   // Update item quantity in cart using repository
   const updatedUser = await cartRepository.updateItemQuantity(userId, productId, quantity);
   
@@ -66,7 +65,7 @@ export const removeCartItem = async (
   productId: string,
   selectedColor?: string,
   selectedSize?: string
-): Promise<any | null> => {
+): Promise<PrismaCartItem | null> => {
   // Remove item from cart using repository
   const updatedUser = await cartRepository.removeItem(userId, productId);
   

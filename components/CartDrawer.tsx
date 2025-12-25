@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Minus, Plus, Trash2, ArrowRight } from 'lucide-react';
+import { X, Minus, Plus, Trash2, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useStore } from '../store';
 import { Button } from './ui/Button';
 import { formatPrice } from '../utils';
@@ -47,7 +47,7 @@ export const CartDrawer = () => {
               {cart.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                    <ShoppingBagIcon className="w-8 h-8 text-gray-400" />
+                    <ShoppingBag className="w-8 h-8 text-gray-400" />
                   </div>
                   <h3 className="text-lg font-medium">Your cart is empty</h3>
                   <p className="text-gray-500 max-w-xs">Looks like you haven't added anything to your cart yet.</p>
@@ -137,8 +137,3 @@ export const CartDrawer = () => {
   );
 };
 
-function ShoppingBagIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-  );
-}

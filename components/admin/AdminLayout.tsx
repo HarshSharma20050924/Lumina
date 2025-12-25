@@ -25,7 +25,7 @@ export const AdminLayout = () => {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as 'dashboard' | 'products' | 'orders')}
                 className={`flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
                   activeTab === tab.id 
                     ? 'bg-gray-900 text-white' 
@@ -57,7 +57,7 @@ export const AdminLayout = () => {
                {tabs.map(tab => (
                  <button 
                    key={tab.id}
-                   onClick={() => setActiveTab(tab.id as any)}
+                   onClick={() => setActiveTab(tab.id as 'dashboard' | 'products' | 'orders')}
                    className={`p-2 rounded-lg ${activeTab === tab.id ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
                  >
                    <tab.icon className="w-5 h-5" />
