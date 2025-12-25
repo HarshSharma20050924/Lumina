@@ -5,14 +5,14 @@ import {
   getAdminProducts, 
   getAdminUsers 
 } from '../controllers/adminController';
-import { auth } from '../middleware/authMiddleware';
-import { admin } from '../middleware/roleMiddleware';
+import { authenticateToken } from '../middleware/authMiddleware';
+import { requireAdmin } from '../middleware/roleMiddleware';
 
 const router = express.Router();
 
-router.get('/dashboard/stats', auth, admin, getDashboardStats);
-router.get('/orders', auth, admin, getAdminOrders);
-router.get('/products', auth, admin, getAdminProducts);
-router.get('/users', auth, admin, getAdminUsers);
+router.get('/dashboard/stats', authenticateToken, requireAdmin, getDashboardStats);
+router.get('/orders', authenticateToken, requireAdmin, getAdminOrders);
+router.get('/products', authenticateToken, requireAdmin, getAdminProducts);
+router.get('/users', authenticateToken, requireAdmin, getAdminUsers);
 
 export default router;

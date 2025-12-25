@@ -1,18 +1,18 @@
 import express from 'express';
 import { 
   getOrders, 
-  getOrderByIdController, 
+  getOrderByIdController as getOrderById, 
   createOrder, 
   updateOrderStatus 
 } from '../controllers/orderController';
-import { auth } from '../middleware/authMiddleware';
-import { admin } from '../middleware/roleMiddleware';
+import { authenticateToken } from '../middleware/authMiddleware';
+import { requireAdmin } from '../middleware/roleMiddleware';
 
 const router = express.Router();
 
-router.get('/', auth, getOrders);
-router.get('/:id', auth, getOrderById);
-router.post('/', auth, createOrder);
-router.put('/:id/status', auth, admin, updateOrderStatus);
+router.get('/', authenticateToken, getOrders);
+router.get('/:id', authenticateToken, getOrderById);
+router.post('/', authenticateToken, createOrder);
+router.put('/:id/status', authenticateToken, requireAdmin, updateOrderStatus);
 
 export default router;

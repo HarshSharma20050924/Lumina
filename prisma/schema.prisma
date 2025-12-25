@@ -63,6 +63,7 @@ model Product {
   brand       Brand?      @relation(fields: [brandId], references: [id])
   cartItems   CartItem[]
   orderItems  OrderItem[]
+  wishlist    WishlistItem[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
