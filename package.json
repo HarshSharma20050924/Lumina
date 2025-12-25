@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "tsx watch src/server/server.ts",
-    "server:prod": "NODE_ENV=production tsx src/server/server.ts"
+    "server:prod": "NODE_ENV=production tsx src/server/server.ts",
+    "dev:fullstack": "concurrently \"npm run dev\" \"npm run server\"",
+    "setup": "npm install && npx prisma generate && npx prisma db push"
   },
   "dependencies": {
     "react-dom": "^19.2.3",
