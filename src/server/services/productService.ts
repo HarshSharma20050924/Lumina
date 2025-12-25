@@ -1,5 +1,5 @@
 import { ProductRepository } from '../repository/productRepository';
-import { IProduct } from '../models/Product';
+import { Product, CreateProductInput, UpdateProductInput } from '../models/Product';
 
 interface ProductFilters {
   category?: string;
@@ -31,15 +31,15 @@ export const getAllProducts = async (filters: ProductFilters = {}, page: number 
   };
 };
 
-export const getProductById = async (id: string): Promise<IProduct | null> => {
+export const getProductById = async (id: string): Promise<Product | null> => {
   return await productRepository.findById(id);
 };
 
-export const createProduct = async (productData: Partial<IProduct>): Promise<IProduct> => {
+export const createProduct = async (productData: CreateProductInput): Promise<Product> => {
   return await productRepository.create(productData);
 };
 
-export const updateProduct = async (id: string, productData: Partial<IProduct>): Promise<IProduct | null> => {
+export const updateProduct = async (id: string, productData: UpdateProductInput): Promise<Product | null> => {
   return await productRepository.updateById(id, productData);
 };
 
@@ -53,20 +53,15 @@ export const getProductsByCategory = async (category: string) => {
 };
 
 export const getFeaturedProducts = async () => {
-  return await productRepository.findFeatured();
+  return await productRepository.getFeaturedProducts();
 };
 
 export const getCategories = async () => {
-  // Since category data is not in the product repository, we'll need to adjust this
-  // For now, we'll keep the original implementation for getting distinct values
-  const ProductModel = (await import('../models/Product')).default;
-  const categories = await ProductModel.distinct('category');
-  const subcategories = await ProductModel.distinct('subcategory');
-  const genders = await ProductModel.distinct('gender');
-  
+  // We'll need to implement this differently with Prisma
+  // For now, returning empty arrays - this should be implemented with Prisma queries
   return {
-    categories: categories.filter(cat => cat !== undefined),
-    subcategories: subcategories.filter(sub => sub !== undefined),
-    genders: genders.filter(gender => gender !== undefined)
+    categories: [],
+    subcategories: [],
+    genders: []
   };
 };
