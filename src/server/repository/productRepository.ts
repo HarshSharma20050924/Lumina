@@ -1,113 +1,187 @@
-import { Product } from '../models/Product';
-import { Document, Types } from 'mongoose';
-
-// Define the Product document type
-interface ProductDocument extends Product, Document {
-  _id: Types.ObjectId;
-}
+import prisma from '../prisma/prismaService';
+import { Prisma, Product as PrismaProduct } from '@prisma/client';
 
 export class ProductRepository {
   // Create a new product
-  async create(productData: Partial<Product>): Promise<ProductDocument> {
-    const product = new Product(productData);
-    return await product.save();
+  async create(productData: Prisma.ProductCreateInput): Promise<PrismaProduct> {
+    return await prisma.product.create({
+      data: productData,
+    });
   }
 
   // Find product by ID
-  async findById(id: string): Promise<ProductDocument | null> {
-    return await Product.findById(id).populate('category').lean();
-  }
-
-  // Find product by slug
-  async findBySlug(slug: string): Promise<ProductDocument | null> {
-    return await Product.findOne({ slug }).populate('category').lean();
+  async findById(id: string): Promise<PrismaProduct | null> {
+    return await prisma.product.findUnique({
+      where: { id },
+      include: {
+        category: true,
+        brand: true,
+      },
+    });
   }
 
   // Find all products with pagination and filtering
   async findAll(
     page: number = 1, 
     limit: number = 10,
-    filters: { category?: string; minPrice?: number; maxPrice?: number; search?: string } = {}
-  ): Promise<{ products: ProductDocument[]; total: number }> {
+    filters: {
+      categoryId?: string;
+      brandId?: string;
+      inStock?: boolean;
+      search?: string;
+    } = {}
+  ): Promise<{ products: PrismaProduct[]; total: number }> {
     const skip = (page - 1) * limit;
     
-    let query: any = {};
+    const whereClause: Prisma.ProductWhereInput = {};
     
-    // Apply category filter
-    if (filters.category) {
-      query.category = filters.category;
+    if (filters.categoryId) {
+      whereClause.categoryId = filters.categoryId;
     }
     
-    // Apply price range filter
-    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-      query.price = {};
-      if (filters.minPrice !== undefined) query.price.$gte = filters.minPrice;
-      if (filters.maxPrice !== undefined) query.price.$lte = filters.maxPrice;
+    if (filters.brandId) {
+      whereClause.brandId = filters.brandId;
     }
     
-    // Apply search filter
+    if (filters.inStock !== undefined) {
+      whereClause.inStock = filters.inStock;
+    }
+    
     if (filters.search) {
-      query.$or = [
-        { name: { $regex: filters.search, $options: 'i' } },
-        { description: { $regex: filters.search, $options: 'i' } },
-        { 'tags': { $in: [new RegExp(filters.search, 'i')] } }
+      whereClause.OR = [
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } },
       ];
     }
-    
-    const products = await Product.find(query)
-      .populate('category')
-      .skip(skip)
-      .limit(limit)
-      .lean();
-    
-    const total = await Product.countDocuments(query);
-    
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        include: {
+          category: true,
+          brand: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      prisma.product.count({
+        where: whereClause,
+      }),
+    ]);
+
     return { products, total };
   }
 
   // Update product by ID
-  async updateById(id: string, updateData: Partial<Product>): Promise<ProductDocument | null> {
-    return await Product.findByIdAndUpdate(id, updateData, { new: true }).populate('category').lean();
+  async updateById(id: string, updateData: Prisma.ProductUpdateInput): Promise<PrismaProduct | null> {
+    return await prisma.product.update({
+      where: { id },
+      data: updateData,
+    });
   }
 
   // Delete product by ID
   async deleteById(id: string): Promise<boolean> {
-    const result = await Product.findByIdAndDelete(id);
-    return !!result;
+    try {
+      await prisma.product.delete({
+        where: { id },
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
-  // Update product stock
-  async updateStock(productId: string, quantity: number): Promise<ProductDocument | null> {
-    return await Product.findByIdAndUpdate(
-      productId,
-      { $inc: { stock: -quantity, sold: quantity } },
-      { new: true }
-    ).lean();
-  }
-
-  // Find products by category
-  async findByCategory(categoryId: string, page: number = 1, limit: number = 10): Promise<{ products: ProductDocument[]; total: number }> {
+  // Get products by category
+  async findByCategory(categoryId: string, page: number = 1, limit: number = 10) {
     const skip = (page - 1) * limit;
-    const products = await Product.find({ category: categoryId }).skip(skip).limit(limit).lean();
-    const total = await Product.countDocuments({ category: categoryId });
+    
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where: { categoryId },
+        skip,
+        take: limit,
+        include: {
+          category: true,
+          brand: true,
+        },
+      }),
+      prisma.product.count({
+        where: { categoryId },
+      }),
+    ]);
+
     return { products, total };
   }
 
-  // Find featured products
-  async findFeatured(limit: number = 8): Promise<ProductDocument[]> {
-    return await Product.find({ featured: true }).limit(limit).lean();
+  // Get products by brand
+  async findByBrand(brandId: string, page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where: { brandId },
+        skip,
+        take: limit,
+        include: {
+          category: true,
+          brand: true,
+        },
+      }),
+      prisma.product.count({
+        where: { brandId },
+      }),
+    ]);
+
+    return { products, total };
   }
 
-  // Find products on sale
-  async findOnSale(limit: number = 8): Promise<ProductDocument[]> {
-    return await Product.find({ salePrice: { $exists: true, $ne: null } }).limit(limit).lean();
+  // Get featured products (top selling or most popular)
+  async getFeaturedProducts(limit: number = 8) {
+    return await prisma.product.findMany({
+      where: {
+        inStock: true,
+      },
+      take: limit,
+      include: {
+        category: true,
+        brand: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
   }
 
-  // Find related products
-  async findRelated(productId: string, categoryId: string, limit: number = 4): Promise<ProductDocument[]> {
-    return await Product.find({
-      _id: { $ne: productId },
-      category: categoryId
-    }).limit(limit).lean();
+  // Update product stock
+  async updateStock(productId: string, newStock: number): Promise<PrismaProduct | null> {
+    return await prisma.product.update({
+      where: { id: productId },
+      data: {
+        stockCount: newStock,
+        inStock: newStock > 0,
+      },
+    });
+  }
+
+  // Reduce stock by quantity
+  async reduceStock(productId: string, quantity: number): Promise<PrismaProduct | null> {
+    const product = await this.findById(productId);
+    if (!product) return null;
+    
+    if (product.stockCount < quantity) {
+      throw new Error(`Insufficient stock for product ${productId}`);
+    }
+
+    return await prisma.product.update({
+      where: { id: productId },
+      data: {
+        stockCount: product.stockCount - quantity,
+        inStock: (product.stockCount - quantity) > 0,
+      },
+    });
   }
 }

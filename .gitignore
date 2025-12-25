@@ -1,39 +1,39 @@
 ```
 # Dependencies
 node_modules/
-.pnpm-store/
 
-# Build outputs
-dist/
-build/
-coverage/
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Environment variables
+# Environment
 .env
 .env.local
 .env.*
-!.env.example
 
-# IDE files
+# Logs
+*.log
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Prisma
+prisma/migrations/
+*.db
+*.db-journal
+
+# TypeScript/JavaScript build output
+dist/
+build/
+*.js.map
+*.tsbuildinfo
+
+# Editor
 .vscode/
 .idea/
 *.swp
 *.swo
+*.tmp
 
-# OS generated files
+# System
 .DS_Store
 Thumbs.db
-
-# Prisma
-prisma/migrations/
-prisma/schema.db
-
-# Runtime data
-.pnpm-debug.log
 ```
