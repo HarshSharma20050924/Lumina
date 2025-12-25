@@ -19,7 +19,14 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { useStore } from './store';
 
 const App = () => {
-  const { currentView } = useStore();
+  const { currentView, loadProducts, loadCart, loadOrders } = useStore();
+
+  // Load data from API on app start
+  useEffect(() => {
+    loadProducts();
+    loadCart();
+    loadOrders();
+  }, [loadProducts, loadCart, loadOrders]);
 
   // Scroll to top on view change
   useEffect(() => {
@@ -50,7 +57,7 @@ const App = () => {
         return (
           <>
             <Hero />
-            
+
             {/* New Shop Overview Section */}
             <ShopOverview />
 
@@ -65,16 +72,16 @@ const App = () => {
                   <div className="mb-8">
                     <h2 className="text-3xl font-bold tracking-tight mb-2">New Arrivals</h2>
                     <p className="text-gray-500">
-                      Discover our latest collection of premium essentials. 
+                      Discover our latest collection of premium essentials.
                     </p>
                   </div>
                   <ProductGrid />
                 </div>
               </div>
             </section>
-            
+
             <Testimonials />
-            
+
             <NewsletterSignup />
           </>
         );
@@ -88,11 +95,11 @@ const App = () => {
         <CartDrawer />
         <ToastNotifications />
         <BackToTop />
-        
+
         <main className={currentView === 'checkout' || currentView === 'profile' ? 'pt-20' : ''}>
           {renderContent()}
         </main>
-        
+
         {currentView !== 'checkout' && <Footer />}
       </div>
     </ErrorBoundary>
