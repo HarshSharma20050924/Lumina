@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { 
-  createOrderService, 
-  getOrdersByUserId, 
+  createOrder as createOrderService, 
+  getOrderByUserId as getOrdersByUserId, 
   getOrderById, 
-  updateOrderStatusService,
+  updateOrderStatus as updateOrderStatusService,
   getUserOrderHistory 
 } from '../services/orderService';
 import { AuthRequest } from '../middleware/authMiddleware';

@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { 
-  getWishlistByUserId, 
-  addToWishlistService, 
-  removeFromWishlistService 
+  getWishlist as getWishlistByUserId, 
+  addToWishlist as addToWishlistService, 
+  removeFromWishlist as removeFromWishlistService 
 } from '../services/wishlistService';
 import { AuthRequest } from '../middleware/authMiddleware';
 
