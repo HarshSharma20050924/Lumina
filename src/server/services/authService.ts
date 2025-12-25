@@ -1,9 +1,9 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserRepository } from '../repository/userRepository';
-import { User, CreateUserInput, UpdateUserInput } from '../models/User';
+import { Prisma, User as PrismaUser } from '@prisma/client';
 
-interface RegisterUserData extends CreateUserInput {
+interface RegisterUserData {
   email: string;
   firstName: string;
   lastName: string;
@@ -15,9 +15,11 @@ interface LoginCredentials {
   password: string;
 }
 
+type UpdateUserInput = Partial<Pick<PrismaUser, 'email' | 'firstName' | 'lastName' | 'password' | 'phone' | 'address' | 'role' | 'isVerified'>>;
+
 const userRepository = new UserRepository();
 
-export const registerUser = async (userData: RegisterUserData): Promise<User> => {
+export const registerUser = async (userData: RegisterUserData): Promise<PrismaUser> => {
   const { email, firstName, lastName, password } = userData;
 
   // Check if user already exists
@@ -42,7 +44,7 @@ export const registerUser = async (userData: RegisterUserData): Promise<User> =>
   return newUser;
 };
 
-export const loginUser = async (credentials: LoginCredentials): Promise<{ user: User; token: string }> => {
+export const loginUser = async (credentials: LoginCredentials): Promise<{ user: PrismaUser; token: string }> => {
   const { email, password } = credentials;
 
   // Find user by email with password
@@ -67,7 +69,7 @@ export const loginUser = async (credentials: LoginCredentials): Promise<{ user: 
   return { user, token };
 };
 
-export const getUserProfile = async (userId: string): Promise<User> => {
+export const getUserProfile = async (userId: string): Promise<PrismaUser> => {
   const user = await userRepository.findById(userId);
   if (!user) {
     throw new Error('User not found');
@@ -75,7 +77,7 @@ export const getUserProfile = async (userId: string): Promise<User> => {
   return user;
 };
 
-export const updateUserProfile = async (userId: string, updateData: Partial<UpdateUserInput>): Promise<User> => {
+export const updateUserProfile = async (userId: string, updateData: Partial<UpdateUserInput>): Promise<PrismaUser> => {
   const user = await userRepository.updateById(userId, updateData);
 
   if (!user) {

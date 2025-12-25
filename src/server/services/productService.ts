@@ -1,5 +1,5 @@
 import { ProductRepository } from '../repository/productRepository';
-import { Product, CreateProductInput, UpdateProductInput } from '../models/Product';
+import { Prisma, Product as PrismaProduct } from '@prisma/client';
 
 interface ProductFilters {
   category?: string;
@@ -11,6 +11,9 @@ interface ProductFilters {
   sizes?: string[];
   search?: string;
 }
+
+type CreateProductInput = Prisma.ProductCreateInput;
+type UpdateProductInput = Prisma.ProductUpdateInput;
 
 const productRepository = new ProductRepository();
 
@@ -31,15 +34,15 @@ export const getAllProducts = async (filters: ProductFilters = {}, page: number 
   };
 };
 
-export const getProductById = async (id: string): Promise<Product | null> => {
+export const getProductById = async (id: string): Promise<PrismaProduct | null> => {
   return await productRepository.findById(id);
 };
 
-export const createProduct = async (productData: CreateProductInput): Promise<Product> => {
+export const createProduct = async (productData: CreateProductInput): Promise<PrismaProduct> => {
   return await productRepository.create(productData);
 };
 
-export const updateProduct = async (id: string, productData: UpdateProductInput): Promise<Product | null> => {
+export const updateProduct = async (id: string, productData: UpdateProductInput): Promise<PrismaProduct | null> => {
   return await productRepository.updateById(id, productData);
 };
 
