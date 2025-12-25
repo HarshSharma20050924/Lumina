@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/User';
+import { UserRepository } from '../repository/userRepository';
 import { IUser } from '../models/User';
 
 interface RegisterUserData {
@@ -14,11 +14,13 @@ interface LoginCredentials {
   password: string;
 }
 
+const userRepository = new UserRepository();
+
 export const registerUser = async (userData: RegisterUserData): Promise<IUser> => {
   const { email, name, password } = userData;
 
   // Check if user already exists
-  const existingUser = await User.findOne({ email });
+  const existingUser = await userRepository.findByEmail(email);
   if (existingUser) {
     throw new Error('User already exists');
   }
@@ -28,20 +30,21 @@ export const registerUser = async (userData: RegisterUserData): Promise<IUser> =
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
   // Create new user
-  const newUser = new User({
+  const newUser = await userRepository.create({
     email,
     name,
     password: hashedPassword,
+    role: 'user'
   });
 
-  return await newUser.save();
+  return newUser;
 };
 
 export const loginUser = async (credentials: LoginCredentials): Promise<{ user: IUser; token: string }> => {
   const { email, password } = credentials;
 
-  // Find user by email
-  const user = await User.findOne({ email });
+  // Find user by email with password
+  const user = await userRepository.findByEmailWithPassword(email);
   if (!user) {
     throw new Error('Invalid email or password');
   }
@@ -63,7 +66,7 @@ export const loginUser = async (credentials: LoginCredentials): Promise<{ user: 
 };
 
 export const getUserProfile = async (userId: string): Promise<IUser> => {
-  const user = await User.findById(userId);
+  const user = await userRepository.findById(userId);
   if (!user) {
     throw new Error('User not found');
   }
@@ -71,11 +74,7 @@ export const getUserProfile = async (userId: string): Promise<IUser> => {
 };
 
 export const updateUserProfile = async (userId: string, updateData: Partial<IUser>): Promise<IUser> => {
-  const user = await User.findByIdAndUpdate(
-    userId,
-    { ...updateData },
-    { new: true, runValidators: true }
-  );
+  const user = await userRepository.updateById(userId, updateData);
 
   if (!user) {
     throw new Error('User not found');
