@@ -1,4 +1,6 @@
-import Cart, { ICart, ICartItem } from '../models/Cart';
+import { CartRepository } from '../repository/cartRepository';
+import { ProductRepository } from '../repository/productRepository';
+import { ICart, ICartItem } from '../models/Cart';
 import Product from '../models/Product';
 import { IProduct } from '../models/Product';
 
@@ -6,140 +8,89 @@ interface AddToCartData {
   userId: string;
   productId: string;
   quantity: number;
-  selectedColor: string;
-  selectedSize: string;
+  selectedColor?: string;
+  selectedSize?: string;
 }
 
-export const getCartByUserId = async (userId: string): Promise<ICart | null> => {
-  return await Cart.findOne({ userId });
+const cartRepository = new CartRepository();
+const productRepository = new ProductRepository();
+
+export const getCartByUserId = async (userId: string): Promise<any | null> => {
+  return await cartRepository.getUserCart(userId);
 };
 
-export const addToCart = async (cartData: AddToCartData): Promise<ICart> => {
+export const addToCart = async (cartData: AddToCartData): Promise<any> => {
   const { userId, productId, quantity, selectedColor, selectedSize } = cartData;
 
   // Validate product exists
-  const product = await Product.findById(productId);
+  const product = await productRepository.findById(productId);
   if (!product) {
     throw new Error('Product not found');
   }
 
-  // Find existing cart or create new one
-  let cart = await Cart.findOne({ userId });
-  
-  if (cart) {
-    // Check if item already exists in cart
-    const existingItemIndex = cart.items.findIndex(
-      item => item.productId === productId && 
-      item.selectedColor === selectedColor && 
-      item.selectedSize === selectedSize
-    );
+  // Prepare selected options
+  const selectedOptions = {
+    color: selectedColor,
+    size: selectedSize
+  };
 
-    if (existingItemIndex > -1) {
-      // Update quantity
-      cart.items[existingItemIndex].quantity += quantity;
-    } else {
-      // Add new item
-      cart.items.push({
-        productId,
-        quantity,
-        selectedColor,
-        selectedSize
-      });
-    }
-    
-    return await cart.save();
-  } else {
-    // Create new cart
-    const newCart = new Cart({
-      userId,
-      items: [{
-        productId,
-        quantity,
-        selectedColor,
-        selectedSize
-      }]
-    });
-    
-    return await newCart.save();
+  // Add item to cart using repository
+  const updatedUser = await cartRepository.addItem(userId, productId, quantity, selectedOptions);
+  
+  if (!updatedUser) {
+    throw new Error('Failed to add item to cart');
   }
+
+  return updatedUser;
 };
 
 export const updateCartItem = async (
   userId: string, 
   productId: string, 
   quantity: number,
-  selectedColor: string,
-  selectedSize: string
-): Promise<ICart | null> => {
-  const cart = await Cart.findOne({ userId });
-  if (!cart) {
-    throw new Error('Cart not found');
+  selectedColor?: string,
+  selectedSize?: string
+): Promise<any | null> => {
+  // Update item quantity in cart using repository
+  const updatedUser = await cartRepository.updateItemQuantity(userId, productId, quantity);
+  
+  if (!updatedUser) {
+    throw new Error('Failed to update cart item');
   }
 
-  const itemIndex = cart.items.findIndex(
-    item => item.productId === productId && 
-    item.selectedColor === selectedColor && 
-    item.selectedSize === selectedSize
-  );
-
-  if (itemIndex > -1) {
-    if (quantity <= 0) {
-      // Remove item if quantity is 0 or less
-      cart.items.splice(itemIndex, 1);
-    } else {
-      // Update quantity
-      cart.items[itemIndex].quantity = quantity;
-    }
-    
-    return await cart.save();
-  }
-
-  throw new Error('Cart item not found');
+  return updatedUser;
 };
 
 export const removeCartItem = async (
   userId: string, 
   productId: string,
-  selectedColor: string,
-  selectedSize: string
-): Promise<ICart | null> => {
-  const cart = await Cart.findOne({ userId });
-  if (!cart) {
-    throw new Error('Cart not found');
+  selectedColor?: string,
+  selectedSize?: string
+): Promise<any | null> => {
+  // Remove item from cart using repository
+  const updatedUser = await cartRepository.removeItem(userId, productId);
+  
+  if (!updatedUser) {
+    throw new Error('Failed to remove cart item');
   }
 
-  const initialLength = cart.items.length;
-  cart.items = cart.items.filter(
-    item => !(item.productId === productId && 
-    item.selectedColor === selectedColor && 
-    item.selectedSize === selectedSize)
-  );
-
-  if (cart.items.length === initialLength) {
-    throw new Error('Cart item not found');
-  }
-
-  return await cart.save();
+  return updatedUser;
 };
 
 export const clearCart = async (userId: string): Promise<boolean> => {
-  const result = await Cart.deleteOne({ userId });
-  return result.deletedCount === 1;
+  const result = await cartRepository.clearCart(userId);
+  return !!result;
 };
 
 export const getCartTotal = async (userId: string) => {
-  const cart = await Cart.findOne({ userId }).populate('items.productId');
-  if (!cart) return { totalItems: 0, totalAmount: 0 };
-
+  const cartItems = await cartRepository.getCartItemsWithDetails(userId);
+  
   let totalItems = 0;
   let totalAmount = 0;
 
-  for (const item of cart.items) {
-    const product = await Product.findById(item.productId);
-    if (product) {
-      totalItems += item.quantity;
-      totalAmount += product.price * item.quantity;
-    }
+  for (const item of cartItems) {
+    totalItems += item.quantity;
+    totalAmount += item.subtotal;
   }
 
   return { totalItems, totalAmount };

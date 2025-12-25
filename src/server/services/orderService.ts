@@ -1,7 +1,9 @@
-import Order, { IOrder, IOrderItem } from '../models/Order';
+import { OrderRepository } from '../repository/orderRepository';
+import { ProductRepository } from '../repository/productRepository';
+import { UserRepository } from '../repository/userRepository';
+import { IOrder, IOrderItem } from '../models/Order';
 import Product from '../models/Product';
 import Cart from '../models/Cart';
-import { ICart } from '../models/Cart';
 
 interface CreateOrderData {
   userId: string;
@@ -11,12 +13,16 @@ interface CreateOrderData {
   customerName: string;
 }
 
+const orderRepository = new OrderRepository();
+const productRepository = new ProductRepository();
+const userRepository = new UserRepository();
+
 export const createOrder = async (orderData: CreateOrderData): Promise<IOrder> => {
   const { userId, items, total, shippingAddress, customerName } = orderData;
 
   // Validate products exist and have sufficient stock
   for (const item of items) {
-    const product = await Product.findById(item.productId);
+    const product = await productRepository.findById(item.productId as string);
     if (!product) {
       throw new Error(`Product with ID ${item.productId} not found`);
     }
@@ -26,58 +32,53 @@ export const createOrder = async (orderData: CreateOrderData): Promise<IOrder> =
   }
 
   // Create the order
-  const order = new Order({
-    userId,
+  const order = await orderRepository.create({
+    user: userId,
     items,
-    total,
+    totalAmount: total,
     shippingAddress,
-    customerName
+    customerName,
+    status: 'pending'
   });
-
-  const savedOrder = await order.save();
 
   // Update product stock
   for (const item of items) {
-    await Product.findByIdAndUpdate(
-      item.productId,
-      { $inc: { stock: -item.quantity } }
-    );
+    await productRepository.updateStock(item.productId as string, item.quantity);
   }
 
   // Clear the user's cart after successful order
   await Cart.deleteOne({ userId });
 
-  return savedOrder;
+  return order;
 };
 
 export const getOrderByUserId = async (userId: string): Promise<IOrder[]> => {
-  return await Order.find({ userId }).sort({ createdAt: -1 });
+  const result = await orderRepository.findByUserId(userId);
+  return result.orders;
 };
 
 export const getOrderById = async (orderId: string): Promise<IOrder | null> => {
-  return await Order.findById(orderId);
+  return await orderRepository.findById(orderId);
 };
 
 export const updateOrderStatus = async (
   orderId: string, 
   status: 'processing' | 'shipped' | 'delivered' | 'cancelled'
 ): Promise<IOrder | null> => {
-  return await Order.findByIdAndUpdate(
-    orderId,
-    { status },
-    { new: true }
-  );
+  return await orderRepository.updateStatus(orderId, status);
 };
 
 export const getAllOrders = async (): Promise<IOrder[]> => {
-  return await Order.find().sort({ createdAt: -1 });
+  const result = await orderRepository.findAll();
+  return result.orders;
 };
 
 export const getOrdersByStatus = async (status: string): Promise<IOrder[]> => {
-  return await Order.find({ status });
+  const result = await orderRepository.findByStatus(status);
+  return result.orders;
 };
 
 export const getUserOrderHistory = async (userId: string) => {
-  const orders = await Order.find({ userId }).sort({ createdAt: -1 });
-  return orders;
+  const result = await orderRepository.findByUserId(userId);
+  return result.orders;
 };
