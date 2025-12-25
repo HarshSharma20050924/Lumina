@@ -1,22 +1,21 @@
-import { PrismaClient, Category } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../prisma/prismaService';
+import { Prisma, Category as PrismaCategory } from '@prisma/client';
 
 export interface CategoryRepositoryInterface {
   create(data: {
     name: string;
     description?: string;
     parentId?: string;
-  }): Promise<Category>;
-  findAll(): Promise<Category[]>;
-  findById(id: string): Promise<Category | null>;
-  findByName(name: string): Promise<Category | null>;
+  }): Promise<PrismaCategory>;
+  findAll(): Promise<PrismaCategory[]>;
+  findById(id: string): Promise<PrismaCategory | null>;
+  findByName(name: string): Promise<PrismaCategory | null>;
   update(id: string, data: {
     name?: string;
     description?: string;
     parentId?: string;
-  }): Promise<Category>;
-  delete(id: string): Promise<Category>;
+  }): Promise<PrismaCategory>;
+  delete(id: string): Promise<PrismaCategory>;
 }
 
 export class CategoryRepository implements CategoryRepositoryInterface {
@@ -24,13 +23,13 @@ export class CategoryRepository implements CategoryRepositoryInterface {
     name: string;
     description?: string;
     parentId?: string;
-  }): Promise<Category> {
+  }): Promise<PrismaCategory> {
     return await prisma.category.create({
       data,
     });
   }
 
-  async findAll(): Promise<Category[]> {
+  async findAll(): Promise<PrismaCategory[]> {
     return await prisma.category.findMany({
       where: { parentId: null },
       include: {
@@ -40,7 +39,7 @@ export class CategoryRepository implements CategoryRepositoryInterface {
     });
   }
 
-  async findById(id: string): Promise<Category | null> {
+  async findById(id: string): Promise<PrismaCategory | null> {
     return await prisma.category.findUnique({
       where: { id },
       include: {
@@ -50,7 +49,7 @@ export class CategoryRepository implements CategoryRepositoryInterface {
     });
   }
 
-  async findByName(name: string): Promise<Category | null> {
+  async findByName(name: string): Promise<PrismaCategory | null> {
     return await prisma.category.findUnique({
       where: { name },
     });
@@ -60,14 +59,14 @@ export class CategoryRepository implements CategoryRepositoryInterface {
     name?: string;
     description?: string;
     parentId?: string;
-  }): Promise<Category> {
+  }): Promise<PrismaCategory> {
     return await prisma.category.update({
       where: { id },
       data,
     });
   }
 
-  async delete(id: string): Promise<Category> {
+  async delete(id: string): Promise<PrismaCategory> {
     return await prisma.category.delete({
       where: { id },
     });

@@ -1,154 +1,164 @@
-import { User } from '../models/User';
-import { Document, Types } from 'mongoose';
-
-// Define the User document type for cart operations
-interface UserDocument extends Document {
-  _id: Types.ObjectId;
-  cart: Array<{
-    product: Types.ObjectId;
-    quantity: number;
-    selectedOptions?: any;
-  }>;
-}
+import prisma from '../prisma/prismaService';
+import { Prisma, CartItem as PrismaCartItem } from '@prisma/client';
 
 export class CartRepository {
   // Add item to cart
-  async addItem(userId: string, productId: string, quantity: number, selectedOptions?: any): Promise<UserDocument | null> {
-    return await User.findByIdAndUpdate(
-      userId,
-      {
-        $pull: { cart: { product: productId } }, // Remove existing item to avoid duplicates
-        $push: {
-          cart: {
-            product: productId,
-            quantity,
-            selectedOptions: selectedOptions || {}
-          }
-        }
+  async addItem(userId: string, productId: string, quantity: number): Promise<PrismaCartItem> {
+    // Check if item already exists in cart
+    const existingItem = await prisma.cartItem.findUnique({
+      where: {
+        userId_productId: {
+          userId,
+          productId,
+        },
       },
-      { new: true, upsert: true }
-    ).lean();
+    });
+
+    if (existingItem) {
+      // Update quantity if item exists
+      return await prisma.cartItem.update({
+        where: {
+          userId_productId: {
+            userId,
+            productId,
+          },
+        },
+        data: {
+          quantity: existingItem.quantity + quantity,
+        },
+      });
+    } else {
+      // Create new cart item
+      return await prisma.cartItem.create({
+        data: {
+          userId,
+          productId,
+          quantity,
+        },
+      });
+    }
   }
 
   // Update item quantity in cart
-  async updateItemQuantity(userId: string, productId: string, quantity: number): Promise<UserDocument | null> {
+  async updateItemQuantity(userId: string, productId: string, quantity: number): Promise<PrismaCartItem | null> {
     if (quantity <= 0) {
       return await this.removeItem(userId, productId);
     }
-    
-    return await User.findOneAndUpdate(
-      { _id: userId, 'cart.product': productId },
-      { $set: { 'cart.$.quantity': quantity } },
-      { new: true }
-    ).lean();
+
+    return await prisma.cartItem.update({
+      where: {
+        userId_productId: {
+          userId,
+          productId,
+        },
+      },
+      data: {
+        quantity,
+      },
+    });
   }
 
   // Remove item from cart
-  async removeItem(userId: string, productId: string): Promise<UserDocument | null> {
-    return await User.findByIdAndUpdate(
-      userId,
-      { $pull: { cart: { product: productId } } },
-      { new: true }
-    ).lean();
+  async removeItem(userId: string, productId: string): Promise<PrismaCartItem | null> {
+    try {
+      return await prisma.cartItem.delete({
+        where: {
+          userId_productId: {
+            userId,
+            productId,
+          },
+        },
+      });
+    } catch (error) {
+      // If item doesn't exist, return null
+      return null;
+    }
   }
 
   // Clear entire cart
-  async clearCart(userId: string): Promise<UserDocument | null> {
-    return await User.findByIdAndUpdate(
-      userId,
-      { $set: { cart: [] } },
-      { new: true }
-    ).lean();
+  async clearCart(userId: string): Promise<boolean> {
+    try {
+      await prisma.cartItem.deleteMany({
+        where: { userId },
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   // Get user's cart
-  async getUserCart(userId: string): Promise<UserDocument | null> {
-    return await User.findById(userId)
-      .populate({
-        path: 'cart.product',
-        select: 'name price images discountPercentage'
-      })
-      .lean();
+  async getUserCart(userId: string) {
+    return await prisma.cartItem.findMany({
+      where: { userId },
+      include: {
+        product: {
+          include: {
+            category: true,
+            brand: true,
+          },
+        },
+      },
+    });
   }
 
   // Get cart total items count
   async getCartItemCount(userId: string): Promise<number> {
-    const user = await User.findById(userId).lean();
-    if (!user || !user.cart) return 0;
-    return user.cart.reduce((total, item) => total + item.quantity, 0);
+    const items = await prisma.cartItem.findMany({
+      where: { userId },
+    });
+    
+    return items.reduce((total, item) => total + item.quantity, 0);
   }
 
   // Get cart total price
   async getCartTotal(userId: string): Promise<number> {
-    const user = await User.findById(userId)
-      .populate({
-        path: 'cart.product',
-        select: 'price discountPercentage'
-      })
-      .lean();
+    const items = await prisma.cartItem.findMany({
+      where: { userId },
+      include: {
+        product: true,
+      },
+    });
 
-    if (!user || !user.cart) return 0;
-
-    return user.cart.reduce((total, item) => {
-      const product = item.product as any;
-      // Calculate price considering any discounts
-      const discountedPrice = product.discountPercentage 
-        ? product.price * (1 - product.discountPercentage / 100)
-        : product.price;
-      return total + (discountedPrice * item.quantity);
+    return items.reduce((total, item) => {
+      const price = item.product.discountPrice || item.product.price;
+      return total + (price * item.quantity);
     }, 0);
   }
 
   // Check if product exists in cart
   async isProductInCart(userId: string, productId: string): Promise<boolean> {
-    const user = await User.findOne({
-      _id: userId,
-      'cart.product': productId
-    }).lean();
-    
-    return !!user;
-  }
+    const item = await prisma.cartItem.findUnique({
+      where: {
+        userId_productId: {
+          userId,
+          productId,
+        },
+      },
+    });
 
-  // Update cart item options
-  async updateItemOptions(userId: string, productId: string, options: any): Promise<UserDocument | null> {
-    return await User.findOneAndUpdate(
-      { _id: userId, 'cart.product': productId },
-      { $set: { 'cart.$.selectedOptions': options } },
-      { new: true }
-    ).lean();
+    return !!item;
   }
 
   // Get cart items with product details
-  async getCartItemsWithDetails(userId: string): Promise<any[]> {
-    const user = await User.findById(userId)
-      .populate({
-        path: 'cart.product',
-        populate: [
-          {
-            path: 'category',
-            select: 'name'
-          }
-        ],
-        select: 'name price images discountPercentage description category stock'
-      })
-      .lean();
+  async getCartItemsWithDetails(userId: string) {
+    const items = await prisma.cartItem.findMany({
+      where: { userId },
+      include: {
+        product: {
+          include: {
+            category: true,
+            brand: true,
+          },
+        },
+      },
+    });
 
-    if (!user || !user.cart) return [];
-
-    return user.cart.map(item => ({
+    return items.map(item => ({
       ...item,
-      product: item.product,
-      subtotal: this.calculateItemSubtotal(item)
+      subtotal: item.product.discountPrice 
+        ? item.product.discountPrice * item.quantity 
+        : item.product.price * item.quantity,
     }));
-  }
-
-  // Calculate individual item subtotal
-  private calculateItemSubtotal(cartItem: any): number {
-    const product = cartItem.product;
-    // Calculate price considering any discounts
-    const discountedPrice = product.discountPercentage 
-      ? product.price * (1 - product.discountPercentage / 100)
-      : product.price;
-    return discountedPrice * cartItem.quantity;
   }
 }

@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 export interface CustomError extends Error {
   statusCode?: number;
   errors?: any[];
+  code?: number;
 }
 
 export const errorHandler = (
@@ -21,12 +22,18 @@ export const errorHandler = (
   if (err.name === 'ValidationError') {
     statusCode = 400;
     message = 'Validation Error';
-  } else if (err.name === 'CastError') {
-    statusCode = 400;
-    message = 'Invalid ID format';
-  } else if (err.code === 11000) {
-    statusCode = 409;
-    message = 'Duplicate field value entered';
+  } else if (err.name === 'PrismaClientKnownRequestError') {
+    // Handle Prisma specific errors
+    if (err.code === 'P2002') {
+      statusCode = 409;
+      message = 'Duplicate field value entered';
+    } else if (err.code === 'P2025') {
+      statusCode = 404;
+      message = 'Record not found';
+    } else {
+      statusCode = 400;
+      message = 'Database validation error';
+    }
   } else if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Invalid token';

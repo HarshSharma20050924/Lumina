@@ -1,11 +1,12 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserRepository } from '../repository/userRepository';
-import { IUser } from '../models/User';
+import { PrismaUser } from '@prisma/client';
 
 interface RegisterUserData {
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   password: string;
 }
 
@@ -16,8 +17,8 @@ interface LoginCredentials {
 
 const userRepository = new UserRepository();
 
-export const registerUser = async (userData: RegisterUserData): Promise<IUser> => {
-  const { email, name, password } = userData;
+export const registerUser = async (userData: RegisterUserData): Promise<PrismaUser> => {
+  const { email, firstName, lastName, password } = userData;
 
   // Check if user already exists
   const existingUser = await userRepository.findByEmail(email);
@@ -32,7 +33,8 @@ export const registerUser = async (userData: RegisterUserData): Promise<IUser> =
   // Create new user
   const newUser = await userRepository.create({
     email,
-    name,
+    firstName,
+    lastName,
     password: hashedPassword,
     role: 'user'
   });
@@ -40,7 +42,7 @@ export const registerUser = async (userData: RegisterUserData): Promise<IUser> =
   return newUser;
 };
 
-export const loginUser = async (credentials: LoginCredentials): Promise<{ user: IUser; token: string }> => {
+export const loginUser = async (credentials: LoginCredentials): Promise<{ user: PrismaUser; token: string }> => {
   const { email, password } = credentials;
 
   // Find user by email with password
@@ -50,14 +52,14 @@ export const loginUser = async (credentials: LoginCredentials): Promise<{ user: 
   }
 
   // Compare password
-  const isPasswordValid = await bcrypt.compare(password, user.password!);
+  const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
     throw new Error('Invalid email or password');
   }
 
   // Generate JWT token
   const token = jwt.sign(
-    { userId: user._id, email: user.email, role: user.role },
+    { userId: user.id, email: user.email, role: user.role },
     process.env.JWT_SECRET || 'fallback_secret_key',
     { expiresIn: '7d' }
   );
@@ -65,7 +67,7 @@ export const loginUser = async (credentials: LoginCredentials): Promise<{ user: 
   return { user, token };
 };
 
-export const getUserProfile = async (userId: string): Promise<IUser> => {
+export const getUserProfile = async (userId: string): Promise<PrismaUser> => {
   const user = await userRepository.findById(userId);
   if (!user) {
     throw new Error('User not found');
@@ -73,7 +75,7 @@ export const getUserProfile = async (userId: string): Promise<IUser> => {
   return user;
 };
 
-export const updateUserProfile = async (userId: string, updateData: Partial<IUser>): Promise<IUser> => {
+export const updateUserProfile = async (userId: string, updateData: Partial<PrismaUser>): Promise<PrismaUser> => {
   const user = await userRepository.updateById(userId, updateData);
 
   if (!user) {

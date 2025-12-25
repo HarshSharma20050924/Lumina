@@ -4,17 +4,18 @@ import { AuthRequest } from '../middleware/authMiddleware';
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, name, password } = req.body;
+    const { email, firstName, lastName, password } = req.body;
 
-    const user = await registerUser({ email, name, password });
+    const user = await registerUser({ email, firstName, lastName, password });
     
     // Don't send password in response
     const userResponse = {
-      id: user._id,
+      id: user.id,
       email: user.email,
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
       role: user.role,
-      avatar: user.avatar,
+      isVerified: user.isVerified,
       createdAt: user.createdAt
     };
 
@@ -39,11 +40,12 @@ export const login = async (req: Request, res: Response) => {
     
     // Don't send password in response
     const userResponse = {
-      id: user._id,
+      id: user.id,
       email: user.email,
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
       role: user.role,
-      avatar: user.avatar,
+      isVerified: user.isVerified,
       createdAt: user.createdAt
     };
 
@@ -70,17 +72,18 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const user = await getUserProfile(req.user._id);
+    const user = await getUserProfile(req.user.id);
     
     // Don't send password in response
     const userResponse = {
-      id: user._id,
+      id: user.id,
       email: user.email,
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
       role: user.role,
-      avatar: user.avatar,
-      address: user.address,
       phone: user.phone,
+      address: user.address,
+      isVerified: user.isVerified,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     };
@@ -112,17 +115,18 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     delete updateData.email;
     delete updateData.role;
 
-    const user = await updateUserProfile(req.user._id, updateData);
+    const user = await updateUserProfile(req.user.id, updateData);
     
     // Don't send password in response
     const userResponse = {
-      id: user._id,
+      id: user.id,
       email: user.email,
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
       role: user.role,
-      avatar: user.avatar,
-      address: user.address,
       phone: user.phone,
+      address: user.address,
+      isVerified: user.isVerified,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     };

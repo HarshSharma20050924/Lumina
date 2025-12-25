@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import User from '../models/User';
-import { jwtConfig } from '../config/jwt';
+import { UserRepository } from '../repository/userRepository';
+
+const userRepository = new UserRepository();
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -16,10 +17,10 @@ export const authenticateToken = async (req: AuthRequest, res: Response, next: N
       return res.status(401).json({ message: 'Access token is required' });
     }
 
-    const decoded = jwt.verify(token, jwtConfig.secret) as { userId: string; email: string; role: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key') as { userId: string; email: string; role: string };
     
     // Fetch user from database to ensure they still exist and get fresh data
-    const user = await User.findById(decoded.userId);
+    const user = await userRepository.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({ message: 'User no longer exists' });
     }
@@ -41,10 +42,10 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
       return next();
     }
 
-    const decoded = jwt.verify(token, jwtConfig.secret) as { userId: string; email: string; role: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key') as { userId: string; email: string; role: string };
     
     // Fetch user from database to ensure they still exist and get fresh data
-    const user = await User.findById(decoded.userId);
+    const user = await userRepository.findById(decoded.userId);
     if (!user) {
       req.user = null;
       return next();
