@@ -8,6 +8,7 @@ export interface IUser extends Document {
   avatar?: string;
   address?: string;
   phone?: string;
+  wishlist?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +22,7 @@ const UserSchema: Schema = new Schema(
     avatar: String,
     address: String,
     phone: String,
+    wishlist: [{ type: String }] // Array of product IDs
   },
   { timestamps: true }
 );
