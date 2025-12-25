@@ -1,9 +1,9 @@
 import { OrderRepository } from '../repository/orderRepository';
 import { ProductRepository } from '../repository/productRepository';
 import { UserRepository } from '../repository/userRepository';
+import { CartRepository } from '../repository/cartRepository';
 import { IOrder, IOrderItem } from '../models/Order';
 import Product from '../models/Product';
-import Cart from '../models/Cart';
 
 interface CreateOrderData {
   userId: string;
@@ -16,6 +16,7 @@ interface CreateOrderData {
 const orderRepository = new OrderRepository();
 const productRepository = new ProductRepository();
 const userRepository = new UserRepository();
+const cartRepository = new CartRepository();
 
 export const createOrder = async (orderData: CreateOrderData): Promise<IOrder> => {
   const { userId, items, total, shippingAddress, customerName } = orderData;
@@ -47,7 +48,7 @@ export const createOrder = async (orderData: CreateOrderData): Promise<IOrder> =
   }
 
   // Clear the user's cart after successful order
-  await Cart.deleteOne({ userId });
+  await cartRepository.clearCart(userId);
 
   return order;
 };
