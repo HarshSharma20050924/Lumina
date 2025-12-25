@@ -6,13 +6,13 @@ import {
   getAdminUsers 
 } from '../controllers/adminController';
 import { auth } from '../middleware/authMiddleware';
-import { admin } from '../middleware/roleMiddleware';
+import { requireAdmin } from '../middleware/roleMiddleware';
 
 const router = express.Router();
 
-router.get('/dashboard/stats', auth, admin, getDashboardStats);
-router.get('/orders', auth, admin, getAdminOrders);
-router.get('/products', auth, admin, getAdminProducts);
-router.get('/users', auth, admin, getAdminUsers);
+router.get('/dashboard/stats', auth, requireAdmin, getDashboardStats);
+router.get('/orders', auth, requireAdmin, getAdminOrders);
+router.get('/products', auth, requireAdmin, getAdminProducts);
+router.get('/users', auth, requireAdmin, getAdminUsers);
 
 export default router;

@@ -9,7 +9,7 @@ import {
   getCategoriesController
 } from '../controllers/productController';
 import { auth } from '../middleware/authMiddleware';
-import { admin } from '../middleware/roleMiddleware';
+import { requireAdmin } from '../middleware/roleMiddleware';
 
 const router = express.Router();
 
@@ -18,8 +18,8 @@ router.get('/search', getAllProductsController);
 router.get('/categories/:category', getProductsByCategoryController);
 router.get('/categories', getCategoriesController);
 router.get('/:id', getProductByIdController);
-router.post('/', auth, admin, createProductController);
-router.put('/:id', auth, admin, updateProductController);
-router.delete('/:id', auth, admin, deleteProductController);
+router.post('/', auth, requireAdmin, createProductController);
+router.put('/:id', auth, requireAdmin, updateProductController);
+router.delete('/:id', auth, requireAdmin, deleteProductController);
 
 export default router;

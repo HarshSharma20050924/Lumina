@@ -5,13 +5,15 @@ node_modules/
 # Build artifacts
 dist/
 build/
-.next/
-out/
+target/
+
+# Logs
+*.log
 
 # Environment
 .env
 .env.local
-.env.
+*.env.*
 
 # Editor/IDE
 .vscode/
@@ -20,28 +22,139 @@ out/
 *.swo
 *.tmp
 
-# Logs
-*.log
-
 # Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Coverage
-coverage/
-htmlcov/
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
 .coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git/
+.mypy_cache/
+.pytest_cache/
+.hypothesis/
 
-# OS
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+node_modules/
+jspm_packages/
+web_modules/
+*.tsbuildinfo
+.next/
+.nuxt/
+.vuepress/dist
+.uxt
+dist
+.output
+.commit
+.nyc_output
+coverage
+.nyc_output/
+coverage/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.tar.gz
 .DS_Store
 Thumbs.db
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
+# C/C++
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Go
+*.o
+*.a
+*.swp
+*~
+.DS_Store
+/.history/
+/vendor/
+
+# Rust
+target/
+*.so
+*.dylib
+*.dll
+Cargo.lock
+
+# Ruby
+*.gem
+*.rbc
+.bundle
+.config
+.yardoc
+_yardoc
+doc/
+.rdoc
+.rbx
+.project
+.settings
+*.tmproj
+*.rake
+
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+dist/
+build/
+target/
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+*.env.*
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+coverage/
+htmlcov/
+*.coverage
 
 # Compressed files
 *.zip
