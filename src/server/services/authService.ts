@@ -1,9 +1,9 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserRepository } from '../repository/userRepository';
-import { PrismaUser } from '@prisma/client';
+import { User, CreateUserInput, UpdateUserInput } from '../models/User';
 
-interface RegisterUserData {
+interface RegisterUserData extends CreateUserInput {
   email: string;
   firstName: string;
   lastName: string;
@@ -17,7 +17,7 @@ interface LoginCredentials {
 
 const userRepository = new UserRepository();
 
-export const registerUser = async (userData: RegisterUserData): Promise<PrismaUser> => {
+export const registerUser = async (userData: RegisterUserData): Promise<User> => {
   const { email, firstName, lastName, password } = userData;
 
   // Check if user already exists
@@ -42,7 +42,7 @@ export const registerUser = async (userData: RegisterUserData): Promise<PrismaUs
   return newUser;
 };
 
-export const loginUser = async (credentials: LoginCredentials): Promise<{ user: PrismaUser; token: string }> => {
+export const loginUser = async (credentials: LoginCredentials): Promise<{ user: User; token: string }> => {
   const { email, password } = credentials;
 
   // Find user by email with password
@@ -67,7 +67,7 @@ export const loginUser = async (credentials: LoginCredentials): Promise<{ user: 
   return { user, token };
 };
 
-export const getUserProfile = async (userId: string): Promise<PrismaUser> => {
+export const getUserProfile = async (userId: string): Promise<User> => {
   const user = await userRepository.findById(userId);
   if (!user) {
     throw new Error('User not found');
@@ -75,7 +75,7 @@ export const getUserProfile = async (userId: string): Promise<PrismaUser> => {
   return user;
 };
 
-export const updateUserProfile = async (userId: string, updateData: Partial<PrismaUser>): Promise<PrismaUser> => {
+export const updateUserProfile = async (userId: string, updateData: Partial<UpdateUserInput>): Promise<User> => {
   const user = await userRepository.updateById(userId, updateData);
 
   if (!user) {
